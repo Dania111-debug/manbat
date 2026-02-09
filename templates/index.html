@@ -2,37 +2,32 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>اختبار الخريطة</title>
+<title>اختبار الدبوس</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
 
 <style>
-body {
-    font-family: Arial;
-    padding: 20px;
-}
-#map {
-    height: 400px;
-}
+body { margin: 0; font-family: Arial; }
+#map { height: 100vh; }
 </style>
 </head>
 
 <body>
 
-<h3>اضغطي على الخريطة</h3>
 <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
 <script>
-var map = L.map('map').setView([24.7, 46.6], 6);
+const map = L.map('map').setView([24.7, 46.6], 6);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+  attribution: '© OpenStreetMap'
 }).addTo(map);
 
 map.on('click', function(e) {
-    L.marker(e.latlng).addTo(map);
+  L.marker(e.latlng).addTo(map);
 });
 </script>
 
