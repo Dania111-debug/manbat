@@ -11,21 +11,30 @@
 body {
     margin: 0;
     font-family: Arial;
-    text-align: center;
 }
+
 #top {
-    padding: 10px;
-}
-input {
+    position: fixed;
+    top: 10px;
+    left: 10px; /* يسار مثل ما طلبتي */
+    background: white;
     padding: 8px;
-    width: 200px;
+    border-radius: 8px;
+    z-index: 1000;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
-button {
-    padding: 8px 12px;
-    margin-right: 5px;
+
+#top input {
+    width: 160px; /* قصّرنا الحقل */
+    padding: 6px;
 }
+
+#top button {
+    padding: 6px 10px;
+}
+
 #map {
-    height: 80vh;
+    height: 100vh;
 }
 </style>
 </head>
@@ -49,19 +58,27 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 let selectedLocation = null;
+let tempMarker = null;
 
 map.on('click', function(e) {
     selectedLocation = e.latlng;
-    L.marker(e.latlng).addTo(map);
+
+    if (tempMarker) {
+        map.removeLayer(tempMarker);
+    }
+
+    tempMarker = L.marker(e.latlng).addTo(map);
 });
 
 function addMarker() {
-    let name = document.getElementById("schoolName").value;
+    let name = document.getElementById("schoolName").value.trim();
+
     if (!selectedLocation || !name) {
-        alert("حددي الموقع واكتبي الاسم");
+        alert("حددي الموقع ثم اكتبي اسم المدرسة");
         return;
     }
-    alert("تمت الإضافة: " + name);
+
+    tempMarker.bindPopup(name).openPopup();
 }
 </script>
 
