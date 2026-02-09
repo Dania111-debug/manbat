@@ -131,11 +131,16 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 let selected = null;
 let tempMarker = null;
 
-map.on('click', e => {
+map.on('click', function(e) {
     selected = e.latlng;
-    if (tempMarker) map.removeLayer(tempMarker);
-    tempMarker = L.marker(e.latlng).addTo(map);
+
+    if (tempMarker) {
+        map.removeLayer(tempMarker);
+    }
+
+    tempMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
 });
+
 
 fetch('/schools')
 .then(r => r.json())
