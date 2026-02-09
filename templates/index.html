@@ -16,7 +16,7 @@ body {
 #top {
     position: fixed;
     top: 10px;
-    left: 10px; /* يسار مثل ما طلبتي */
+    left: 10px;
     background: white;
     padding: 8px;
     border-radius: 8px;
@@ -24,13 +24,14 @@ body {
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-#top input {
-    width: 160px; /* قصّرنا الحقل */
+#schoolName {
+    width: 150px;
     padding: 6px;
 }
 
 #top button {
     padding: 6px 10px;
+    cursor: pointer;
 }
 
 #map {
@@ -57,12 +58,9 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap'
 }).addTo(map);
 
-let selectedLocation = null;
 let tempMarker = null;
 
 map.on('click', function(e) {
-    selectedLocation = e.latlng;
-
     if (tempMarker) {
         map.removeLayer(tempMarker);
     }
@@ -73,7 +71,7 @@ map.on('click', function(e) {
 function addMarker() {
     let name = document.getElementById("schoolName").value.trim();
 
-    if (!selectedLocation || !name) {
+    if (!tempMarker || !name) {
         alert("حددي الموقع ثم اكتبي اسم المدرسة");
         return;
     }
