@@ -4,27 +4,19 @@ app = Flask(__name__)
 
 schools = []
 
-@app.route('/')
+@app.route("/")
 def home():
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/add_school', methods=['POST'])
+@app.route("/add", methods=["POST"])
 def add_school():
     data = request.json
-    schools.append({
-        "name": data['name'],
-        "lat": data['lat'],
-        "lng": data['lng']
-    })
-    return jsonify({"message": "تمت الإضافة"})
+    schools.append(data)
+    return jsonify({"status": "ok"})
 
-@app.route('/schools')
+@app.route("/schools")
 def get_schools():
     return jsonify(schools)
 
-@app.route('/count')
-def count():
-    return jsonify({"count": len(schools)})
-
-if __name__ == '__main__':
-    app.run()
+if __name__ == "__main__":
+    app.run(debug=True)
