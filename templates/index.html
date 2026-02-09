@@ -37,7 +37,6 @@ body {
     padding: 8px 12px;
     border-radius: 12px;
     cursor: pointer;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
     z-index: 1000;
 }
 
@@ -51,32 +50,24 @@ body {
     padding: 16px;
     border-radius: 16px;
     margin-bottom: 12px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-}
-
-.card h3 {
-    margin: 0 0 8px 0;
 }
 
 .card input,
 .card button {
     width: 100%;
     height: 42px;
-    font-size: 14px;
     border-radius: 12px;
 }
 
 .card input {
     padding: 0 12px;
-    border: 1px solid #ccc;
     margin-bottom: 6px;
 }
 
 .card button {
-    border: none;
     background: var(--green);
     color: white;
-    cursor: pointer;
+    border: none;
 }
 
 #map {
@@ -100,34 +91,31 @@ body {
 <div class="toggle" onclick="toggleDark()">🌙</div>
 
 <div class="container">
-
 <h2>🌱 منبت</h2>
-<p>خريطة توضح مشاركة الطالبات حسب المدارس</p>
+<p>خريطة مشاركة الطالبات حسب المدارس</p>
 
 <div class="card">
-    <b>عدد المشاركات:</b>
-    <span id="counter">...</span>
+عدد المشاركات: <b id="counter">...</b>
 </div>
 
 <div class="card">
-    <h3>إضافة مشاركة</h3>
-    <input id="schoolName" placeholder="اسم المدرسة">
-    <button onclick="submit()">إضافة 🌿</button>
+<h3>إضافة مشاركة</h3>
+<input id="schoolName" placeholder="اسم المدرسة">
+<button onclick="submit()">إضافة 🌿</button>
 </div>
 
 <div class="card">
-    <h3>🏆 ترتيب المدارس</h3>
-    <div id="topList"></div>
+<h3>🏆 أعلى المدارس</h3>
+<div id="topList"></div>
 </div>
 
 <div id="map"></div>
-
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-function toggleDark() {
+function toggleDark(){
     document.body.classList.toggle("dark");
 }
 
@@ -141,15 +129,21 @@ var map = L.map('map').setView([24.7, 46.7], 6);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let selected = null;
-map.on('click', e => selected = e.latlng);
+let tempMarker = null;
+
+map.on('click', e => {
+    selected = e.latlng;
+    if (tempMarker) map.removeLayer(tempMarker);
+    tempMarker = L.marker(e.latlng).addTo(map);
+});
 
 fetch('/schools')
 .then(r => r.json())
 .then(data => {
     data.forEach(s => {
         L.marker([s.lat, s.lng])
-            .addTo(map)
-            .bindPopup(s.school + "<br>👩‍🎓 " + s.count);
+        .addTo(map)
+        .bindPopup(`${s.school}<br>👩‍🎓 ${s.count}`);
     });
 });
 
@@ -169,18 +163,18 @@ fetch('/schools/top')
     });
 });
 
-function submit() {
+function submit(){
     let school = schoolName.value.trim();
     if (!school || !selected) {
-        alert("حددي الموقع واسم المدرسة");
+        alert("حددي الموقع واكتبي اسم المدرسة");
         return;
     }
 
     fetch('/register', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-            school: school,
+            school,
             lat: selected.lat,
             lng: selected.lng,
             device_id: deviceId
@@ -189,10 +183,7 @@ function submit() {
     .then(r => r.json())
     .then(d => {
         if (d.error) alert(d.error);
-        else {
-            alert("تمت الإضافة 🌱");
-            location.reload();
-        }
+        else location.reload();
     });
 }
 </script>
