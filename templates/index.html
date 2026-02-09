@@ -2,127 +2,97 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>خريطة مدارس منبت</title>
+<title>منبت | خريطة المدارس</title>
 
-<link rel="stylesheet"
- href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
 
 <style>
-:root {
-    --bg: #f4f6f8;
-    --card: #ffffff;
-    --text: #1f2937;
-    --primary: #2fa86f; /* أخضر منبت */
-}
-
-body.dark {
-    --bg: #0f172a;
-    --card: #1e293b;
-    --text: #e5e7eb;
-}
-
 body {
-    margin: 0;
-    font-family: "Segoe UI", Arial;
-    background: var(--bg);
-    color: var(--text);
+    margin:0;
+    font-family: Arial;
+    display:flex;
+    background:#0f172a;
+    color:#e5e7eb;
 }
-
-/* الشريط العلوي */
-#top {
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    background: var(--card);
-    padding: 10px;
-    border-radius: 14px;
-    z-index: 1000;
-    box-shadow: 0 10px 25px rgba(0,0,0,.15);
-    display: flex;
-    align-items: center;
-    gap: 6px;
+#side {
+    width:300px;
+    background:#1e293b;
+    padding:15px;
 }
-
-#schoolName {
-    width: 140px;
-    padding: 7px 10px;
-    border-radius: 10px;
-    border: 1px solid #cbd5e1;
-    outline: none;
+h2 { color:#34d399 }
+input,button {
+    width:100%;
+    padding:8px;
+    margin:6px 0;
+    border-radius:8px;
+    border:none;
 }
-
-#addBtn {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 7px 12px;
-    border-radius: 10px;
-    cursor: pointer;
+button {
+    background:#34d399;
+    cursor:pointer;
 }
-
-#toggleDark {
-    background: none;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-}
-
-/* الخريطة */
 #map {
-    height: 100vh;
+    flex:1;
 }
-
-/* تعديل ألوان الـ popup */
-.leaflet-popup-content-wrapper {
-    background: var(--card);
-    color: var(--text);
-}
+li { margin:4px 0 }
 </style>
 </head>
 
 <body>
 
-<div id="top">
-    <button id="toggleDark">🌙</button>
-    <input id="schoolName" placeholder="اسم المدرسة">
-    <button id="addBtn">إضافة</button>
+<div id="side">
+<h2>🌱 منبت</h2>
+
+<input id="name" placeholder="اسم المدرسة">
+<button onclick="add()">إضافة</button>
+
+<p>👥 عدد المشاركين: <span id="count">0</span></p>
+
+<h3>🏆 Top 5</h3>
+<ul id="top"></ul>
 </div>
 
 <div id="map"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-
 <script>
-let map = L.map('map').setView([24.7, 46.6], 6);
+let map = L.map('map').setView([24.7,46.6],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap'
-}).addTo(map);
+let markerPos=null;
 
-let marker = null;
-
-/* اختيار الموقع */
-map.on('click', function(e) {
-    if (marker) map.removeLayer(marker);
-    marker = L.marker(e.latlng).addTo(map);
+map.on('click',e=>{
+    markerPos=e.latlng;
+    L.marker(e.latlng).addTo(map);
 });
 
-/* إضافة الاسم */
-document.getElementById("addBtn").onclick = function () {
-    let name = document.getElementById("schoolName").value.trim();
+async function add(){
+    if(!markerPos) return alert("اختاري موقع");
+    let name=document.getElementById("name").value;
+    if(!name) return alert("اكتبي الاسم");
 
-    if (!marker || !name) {
-        alert("حددي الموقع واكتبي اسم المدرسة");
-        return;
-    }
+    await fetch("/add",{
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name,lat:markerPos.lat,lng:markerPos.lng})
+    });
 
-    marker.bindPopup(name).openPopup();
-};
+    load();
+}
 
-/* دارك مود */
-document.getElementById("toggleDark").onclick = function () {
-    document.body.classList.toggle("dark");
-};
+async function load(){
+    document.getElementById("count").innerText =
+      await (await fetch("/count")).json();
+
+    let top = await (await fetch("/top")).json();
+    let ul=document.getElementById("top");
+    ul.innerHTML="";
+    top.forEach(t=>{
+        ul.innerHTML+=`<li>${t[0]} (${t[1]})</li>`;
+    });
+}
+
+load();
 </script>
 
 </body>
