@@ -1,8 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from collections import defaultdict
 
-app = Flask(__name__)
-
 def normalize_school(name):
     words_to_remove = [
         "مدرسة", "ثانوية", "متوسطة",
@@ -20,10 +18,16 @@ def normalize_school(name):
     return " ".join(name.split()).strip()
 
 
+app = Flask(__name__)
+
+# 🔐 كلمة سر الأونر
+ADMIN_PASSWORD = "monbat-admin"  # غيريها
+
 # تخزين مؤقت بالذاكرة
 schools = []
 school_counts = defaultdict(int)
 devices = set()
+
 
 @app.route("/")
 def home():
@@ -33,8 +37,8 @@ def home():
 @app.route("/register", methods=["POST"])
 def register():
     data = request.json
-    device = data.get("device_id")
 
+    device = data.get("device_id")
     if device in devices:
         return jsonify({"error": "تم التسجيل من هذا الجهاز مسبقًا"}), 400
 
@@ -82,6 +86,22 @@ def top_schools():
 @app.route("/count")
 def count():
     return jsonify({"count": sum(school_counts.values())})
+
+
+# 🔥 زر تصفير السيرفر (للأونر فقط)
+@app.route("/admin/reset", methods=["POST"])
+def admin_reset():
+    data = request.json
+    password = data.get("password")
+
+    if password != ADMIN_PASSWORD:
+        return jsonify({"error": "غير مصرح"}), 403
+
+    schools.clear()
+    school_counts.clear()
+    devices.clear()
+
+    return jsonify({"success": True})
 
 
 if __name__ == "__main__":
