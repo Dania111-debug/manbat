@@ -141,16 +141,31 @@ map.on('click', function(e) {
     tempMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
 });
 
+let markers = [];
 
-fetch('/schools')
-.then(r => r.json())
-.then(data => {
-    data.forEach(s => {
-        L.marker([s.lat, s.lng])
-        .addTo(map)
-        .bindPopup(`${s.school}<br>👩‍🎓 ${s.count}`);
+function loadSchools() {
+    // نحذف الدبابيس القديمة
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+
+    fetch('/schools')
+    .then(r => r.json())
+    .then(data => {
+        data.forEach(s => {
+            let m = L.marker([s.lat, s.lng])
+                .addTo(map)
+                .bindPopup(`${s.school}<br>👩‍🎓 ${s.count}`);
+            markers.push(m);
+        });
     });
-});
+}
+
+// أول تحميل
+loadSchools();
+
+// تحديث تلقائي كل 5 ثواني
+setInterval(loadSchools, 5000);
+
 
 fetch('/count')
 .then(r => r.json())
