@@ -3,6 +3,23 @@ from collections import defaultdict
 
 app = Flask(__name__)
 
+def normalize_school(name):
+    words_to_remove = [
+        "مدرسة", "ثانوية", "متوسطة",
+        "ابتدائية", "مجمع", "بنات", "بنين"
+    ]
+
+    name = name.lower()
+
+    for w in words_to_remove:
+        name = name.replace(w, "")
+
+    name = name.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا")
+    name = name.replace("ة", "ه").replace("ى", "ي")
+
+    return " ".join(name.split()).strip()
+
+
 # تخزين مؤقت بالذاكرة
 schools = []
 school_counts = defaultdict(int)
@@ -11,6 +28,7 @@ devices = set()
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 @app.route("/register", methods=["POST"])
 def register():
@@ -22,11 +40,14 @@ def register():
 
     devices.add(device)
 
-    school = data["school"]
+    raw_name = data["school"]
+    school = normalize_school(raw_name)
+
     lat = data["lat"]
     lng = data["lng"]
 
     school_counts[school] += 1
+
     schools.append({
         "school": school,
         "lat": lat,
@@ -36,12 +57,14 @@ def register():
 
     return jsonify({"success": True})
 
+
 @app.route("/schools")
 def get_schools():
     latest = {}
     for s in schools:
         latest[s["school"]] = s
     return jsonify(list(latest.values()))
+
 
 @app.route("/schools/top")
 def top_schools():
@@ -50,13 +73,16 @@ def top_schools():
         key=lambda x: x[1],
         reverse=True
     )[:5]
+
     return jsonify([
         {"school": k, "count": v} for k, v in top
     ])
 
+
 @app.route("/count")
 def count():
     return jsonify({"count": sum(school_counts.values())})
+
 
 if __name__ == "__main__":
     app.run(debug=True)
