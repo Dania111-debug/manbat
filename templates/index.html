@@ -95,7 +95,7 @@ body {
 <p>خريطة مشاركة الطالبات حسب المدارس</p>
 
 <div class="card">
-عدد المشاركات: <b id="counter">...</b>
+عدد المشاركات: <b id="counter">0</b>
 </div>
 
 <div class="card">
@@ -130,41 +130,69 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let selected = null;
 let tempMarker = null;
+let markers = {};
 
-map.on('click', e => {
+map.on('click', function(e) {
     selected = e.latlng;
-    if (tempMarker) map.removeLayer(tempMarker);
-    tempMarker = L.marker(e.latlng).addTo(map);
+
+    if (tempMarker) {
+        map.removeLayer(tempMarker);
+    }
+
+    tempMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
 });
 
-fetch('/schools')
-.then(r => r.json())
-.then(data => {
-    data.forEach(s => {
-        L.marker([s.lat, s.lng])
-        .addTo(map)
-        .bindPopup(`${s.school}<br>👩‍🎓 ${s.count}`);
+function loadSchools() {
+    fetch('/schools')
+    .then(r => r.json())
+    .then(data => {
+        data.forEach(s => {
+            if (markers[s.school]) {
+                markers[s.school]
+                    .setPopupContent(`${s.school}<br>👩‍🎓 ${s.count}`);
+            } else {
+                let m = L.marker([s.lat, s.lng])
+                    .addTo(map)
+                    .bindPopup(`${s.school}<br>👩‍🎓 ${s.count}`);
+                markers[s.school] = m;
+            }
+        });
     });
-});
+}
 
-fetch('/count')
-.then(r => r.json())
-.then(d => counter.innerText = d.count);
+function loadCount(){
+    fetch('/count')
+    .then(r => r.json())
+    .then(d => counter.innerText = d.count);
+}
 
-fetch('/schools/top')
-.then(r => r.json())
-.then(data => {
-    topList.innerHTML = "";
-    data.forEach(s => {
-        let div = document.createElement("div");
-        div.className = "rank";
-        div.innerHTML = `<span>${s.school}</span><b>${s.count}</b>`;
-        topList.appendChild(div);
+function loadTop(){
+    fetch('/schools/top')
+    .then(r => r.json())
+    .then(data => {
+        topList.innerHTML = "";
+        data.forEach(s => {
+            let div = document.createElement("div");
+            div.className = "rank";
+            div.innerHTML = `<span>${s.school}</span><b>${s.count}</b>`;
+            topList.appendChild(div);
+        });
     });
-});
+}
+
+loadSchools();
+loadCount();
+loadTop();
+
+setInterval(() => {
+    loadSchools();
+    loadCount();
+    loadTop();
+}, 5000);
 
 function submit(){
     let school = schoolName.value.trim();
+
     if (!school || !selected) {
         alert("حددي الموقع واكتبي اسم المدرسة");
         return;
@@ -183,7 +211,12 @@ function submit(){
     .then(r => r.json())
     .then(d => {
         if (d.error) alert(d.error);
-        else location.reload();
+        else {
+            alert("تمت الإضافة 🌿");
+            loadSchools();
+            loadCount();
+            loadTop();
+        }
     });
 }
 </script>
