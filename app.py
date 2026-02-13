@@ -3,6 +3,7 @@ from collections import defaultdict
 
 app = Flask(__name__)
 
+# توحيد أسماء المدارس تلقائياً
 def normalize_school(name):
     words_to_remove = [
         "مدرسة", "ثانوية", "متوسطة",
@@ -20,10 +21,11 @@ def normalize_school(name):
     return " ".join(name.split()).strip()
 
 
-# تخزين مؤقت بالذاكرة
+# تخزين مؤقت
 schools = []
 school_counts = defaultdict(int)
 devices = set()
+
 
 @app.route("/")
 def home():
