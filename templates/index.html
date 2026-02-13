@@ -31,6 +31,10 @@
 <body>
 
 <h2>🗺️ خريطة مدارس منبت</h2>
+
+<!-- ✅ العداد بدون تغيير تصميم -->
+<p id="counter">عدد المدارس المشاركة: ...</p>
+
 <p>حددي الموقع على الخريطة ثم اكتبي اسم المدرسة</p>
 
 <input
@@ -62,6 +66,14 @@
                     .addTo(map)
                     .bindPopup(school.name);
             });
+        });
+
+    // ✅ تحميل عدد المدارس
+    fetch('/schools/count')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("counter").innerText =
+                "عدد المدارس المشاركة: " + data.count;
         });
 
     let selectedLocation = null;
