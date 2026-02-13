@@ -1,222 +1,95 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-<meta charset="UTF-8">
-<title>منبت</title>
+    <meta charset="UTF-8">
+    <title>خريطة مدارس منبت</title>
 
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
-<style>
-body {
-    margin: 0;
-    font-family: Tahoma, Arial;
-    background: #0f172a;
-    color: white;
-}
-
-header {
-    text-align: center;
-    padding: 20px;
-    background: linear-gradient(135deg,#22c55e,#16a34a);
-}
-
-header h1 {
-    margin: 0;
-    font-size: 40px;
-}
-
-.container {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    height: calc(100vh - 100px);
-}
-
-.sidebar {
-    padding: 15px;
-    background: #020617;
-    overflow-y: auto;
-}
-
-.card {
-    background: #020617;
-    border: 1px solid #1e293b;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 15px;
-}
-
-button {
-    width: 100%;
-    padding: 10px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    background: #22c55e;
-    color: black;
-}
-
-input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    border: none;
-}
-
-#map {
-    height: 100%;
-}
-</style>
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+    </style>
 </head>
 
 <body>
 
-<header>
-    <h1>🌱 منبت</h1>
-    <p>خريطة المدارس المشاركة</p>
-</header>
+<h1>🗺️ خريطة مدارس منبت</h1>
 
-<div class="container">
-    <div class="sidebar">
+<h3 id="counter">عدد المدارس المشاركة: ...</h3>
 
-        <div class="card">
-            <h3>📍 إضافة مدرسة</h3>
-            <input id="schoolName" placeholder="اسم المدرسة">
-            <button onclick="enablePin()">اختيار الموقع</button>
-        </div>
+<p>اضغطي على الخريطة لتحديد الموقع ثم اكتبي اسم المدرسة</p>
 
-        <div class="card">
-            <h3>📊 عدد المشاركات</h3>
-            <p id="count">0</p>
-        </div>
+<input id="schoolName" type="text" placeholder="اسم المدرسة">
 
-        <div class="card">
-            <h3>🏆 Top 5</h3>
-            <ol id="top"></ol>
-        </div>
+<div id="map"></div>
 
-        <div class="card">
-            <h3>🔐 أدوات الأونر</h3>
-            <button onclick="resetAll()" style="background:#b91c1c;color:white">
-                تصفير السيرفر
-            </button>
-        </div>
-
-    </div>
-
-    <div id="map"></div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-let map = L.map('map').setView([24.7, 46.7], 6);
-let currentMarker = null;
-let placing = false;
+
+var map = L.map('map').setView([24.7136, 46.6753], 6);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-function deviceId() {
-    let id = localStorage.getItem("device_id");
-    if (!id) {
-        id = crypto.randomUUID();
-        localStorage.setItem("device_id", id);
-    }
-    return id;
-}
+// تحميل المدارس
+fetch('/schools')
+.then(res => res.json())
+.then(data => {
+    data.forEach(s => {
+        L.marker([s.lat, s.lng])
+            .addTo(map)
+            .bindPopup(s.name);
+    });
+});
 
-function enablePin() {
-    placing = true;
-    alert("اضغطي على الخريطة لتحديد موقع المدرسة");
-}
+// تحميل عدد المدارس
+fetch('/schools/count')
+.then(res => res.json())
+.then(data => {
+    document.getElementById('counter').innerText =
+        "عدد المدارس المشاركة: " + data.count;
+});
 
-map.on("click", e => {
-    if (!placing) return;
+let selectedLocation = null;
 
-    let name = document.getElementById("schoolName").value;
-    if (!name) {
-        alert("اكتبي اسم المدرسة أولاً");
+// تحديد الموقع
+map.on('click', function(e) {
+    selectedLocation = e.latlng;
+    alert("تم تحديد الموقع، الآن اكتبي اسم المدرسة");
+});
+
+// إضافة مدرسة
+document.getElementById("schoolName").addEventListener("change", function() {
+
+    if (!selectedLocation) {
+        alert("حددي الموقع أولاً");
         return;
     }
 
-    if (currentMarker) map.removeLayer(currentMarker);
+    let name = this.value.trim();
+    if (!name) return;
 
-    currentMarker = L.marker(e.latlng).addTo(map);
-
-    fetch("/register", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
+    fetch('/add_school', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-            school: name,
-            lat: e.latlng.lat,
-            lng: e.latlng.lng,
-            device_id: deviceId()
+            name: name,
+            lat: selectedLocation.lat,
+            lng: selectedLocation.lng
         })
     })
-    .then(r => r.json())
-    .then(d => {
-        if (d.error) alert(d.error);
-        else {
-            alert("✅ تم التسجيل");
-            loadAll();
-        }
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || data.error);
+        location.reload();
     });
-
-    placing = false;
 });
 
-function loadAll() {
-    fetch("/schools")
-    .then(r => r.json())
-    .then(data => {
-        data.forEach(s => {
-            L.marker([s.lat, s.lng])
-            .addTo(map)
-            .bindPopup(`${s.school} (${s.count})`);
-        });
-    });
-
-    fetch("/schools/top")
-    .then(r => r.json())
-    .then(data => {
-        let t = document.getElementById("top");
-        t.innerHTML = "";
-        data.forEach(s => {
-            t.innerHTML += `<li>${s.school} (${s.count})</li>`;
-        });
-    });
-
-    fetch("/count")
-    .then(r => r.json())
-    .then(d => {
-        document.getElementById("count").innerText = d.count;
-    });
-}
-
-function resetAll() {
-    let pass = prompt("كلمة سر الأونر:");
-    if (!pass) return;
-
-    fetch("/admin/reset", {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({password: pass})
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.error) alert("❌ خطأ");
-        else {
-            alert("✅ تم التصفير");
-            location.reload();
-        }
-    });
-}
-
-loadAll();
 </script>
 
 </body>
