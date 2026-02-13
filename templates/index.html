@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <title>خريطة مدارس منبت</title>
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
     <style>
         body {
@@ -25,6 +24,11 @@
             font-size: 14px;
             margin-bottom: 10px;
         }
+
+        .leaflet-popup-content {
+            font-size: 14px;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -32,85 +36,101 @@
 
 <h2>🗺️ خريطة مدارس منبت</h2>
 
-<!-- ✅ العداد بدون تغيير تصميم -->
 <p id="counter">عدد المدارس المشاركة: ...</p>
 
 <p>حددي الموقع على الخريطة ثم اكتبي اسم المدرسة</p>
 
-<input
-    id="schoolName"
-    type="text"
-    placeholder="اسم المدرسة"
-/>
+<input id="schoolName" type="text" placeholder="اسم المدرسة">
 
 <div id="map"></div>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-    // إنشاء الخريطة
-    var map = L.map('map').setView([24.7136, 46.6753], 6);
 
-    // إضافة طبقة الخريطة
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
+var map = L.map('map').setView([24.7136, 46.6753], 6);
 
-    // تحميل المدارس من السيرفر
-    fetch('/schools')
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(school => {
-                L.marker([school.lat, school.lng])
-                    .addTo(map)
-                    .bindPopup(school.name);
-            });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+}).addTo(map);
+
+// تحميل المدارس
+fetch('/schools')
+.then(res => res.json())
+.then(data => {
+
+    data.forEach((school, index) => {
+
+        var customIcon = L.divIcon({
+            className: '',
+            html: `
+                <div style="
+                    background:#2c7be5;
+                    color:white;
+                    border-radius:50%;
+                    width:30px;
+                    height:30px;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-weight:bold;
+                ">
+                    ${index + 1}
+                </div>
+            `,
+            iconSize: [30, 30]
         });
 
-    // ✅ تحميل عدد المدارس
-    fetch('/schools/count')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("counter").innerText =
-                "عدد المدارس المشاركة: " + data.count;
-        });
-
-    let selectedLocation = null;
-
-    // عند الضغط على الخريطة
-    map.on('click', function(e) {
-        selectedLocation = e.latlng;
-        alert("📍 تم تحديد الموقع، الآن اكتبي اسم المدرسة");
+        L.marker([school.lat, school.lng], {icon: customIcon})
+            .addTo(map)
+            .bindPopup("<b>" + school.name + "</b>");
     });
 
-    // عند إدخال اسم المدرسة
-    document.getElementById("schoolName").addEventListener("change", function() {
-        if (!selectedLocation) {
-            alert("❗ حددي الموقع أولاً");
-            return;
-        }
+});
 
-        let schoolName = this.value.trim();
-        if (!schoolName) return;
+// تحميل العداد
+fetch('/schools/count')
+.then(res => res.json())
+.then(data => {
+    document.getElementById("counter").innerText =
+        "عدد المدارس المشاركة: " + data.count;
+});
 
-        fetch('/add_school', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                name: schoolName,
-                lat: selectedLocation.lat,
-                lng: selectedLocation.lng
-            })
+let selectedLocation = null;
+
+map.on('click', function(e) {
+    selectedLocation = e.latlng;
+    alert("📍 تم تحديد الموقع، الآن اكتبي اسم المدرسة");
+});
+
+document.getElementById("schoolName").addEventListener("change", function() {
+
+    if (!selectedLocation) {
+        alert("❗ حددي الموقع أولاً");
+        return;
+    }
+
+    let schoolName = this.value.trim();
+    if (!schoolName) return;
+
+    fetch('/add_school', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            name: schoolName,
+            lat: selectedLocation.lat,
+            lng: selectedLocation.lng
         })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message || data.error);
-            location.reload();
-        });
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || data.error);
+        location.reload();
     });
+});
+
 </script>
 
 </body>
