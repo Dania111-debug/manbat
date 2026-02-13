@@ -5,25 +5,39 @@
     <title>خريطة مدارس منبت</title>
 
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
         #map {
             height: 500px;
             width: 100%;
+            border-radius: 10px;
+        }
+
+        input {
+            padding: 8px;
+            width: 260px;
+            font-size: 14px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 
 <body>
 
-<h1>🗺️ خريطة مدارس منبت</h1>
+<h2>🗺️ خريطة مدارس منبت</h2>
+<p>حددي الموقع على الخريطة ثم اكتبي اسم المدرسة</p>
 
-<h3 id="counter">عدد المدارس المشاركة: ...</h3>
-
-<p>اضغطي على الخريطة لتحديد الموقع ثم اكتبي اسم المدرسة</p>
-
-<input id="schoolName" type="text" placeholder="اسم المدرسة">
+<input
+    id="schoolName"
+    type="text"
+    placeholder="اسم المدرسة"
+/>
 
 <div id="map"></div>
 
@@ -31,65 +45,60 @@
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
+    // إنشاء الخريطة
+    var map = L.map('map').setView([24.7136, 46.6753], 6);
 
-var map = L.map('map').setView([24.7136, 46.6753], 6);
+    // إضافة طبقة الخريطة
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    // تحميل المدارس من السيرفر
+    fetch('/schools')
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(school => {
+                L.marker([school.lat, school.lng])
+                    .addTo(map)
+                    .bindPopup(school.name);
+            });
+        });
 
-// تحميل المدارس
-fetch('/schools')
-.then(res => res.json())
-.then(data => {
-    data.forEach(s => {
-        L.marker([s.lat, s.lng])
-            .addTo(map)
-            .bindPopup(s.name);
+    let selectedLocation = null;
+
+    // عند الضغط على الخريطة
+    map.on('click', function(e) {
+        selectedLocation = e.latlng;
+        alert("📍 تم تحديد الموقع، الآن اكتبي اسم المدرسة");
     });
-});
 
-// تحميل عدد المدارس
-fetch('/schools/count')
-.then(res => res.json())
-.then(data => {
-    document.getElementById('counter').innerText =
-        "عدد المدارس المشاركة: " + data.count;
-});
+    // عند إدخال اسم المدرسة
+    document.getElementById("schoolName").addEventListener("change", function() {
+        if (!selectedLocation) {
+            alert("❗ حددي الموقع أولاً");
+            return;
+        }
 
-let selectedLocation = null;
+        let schoolName = this.value.trim();
+        if (!schoolName) return;
 
-// تحديد الموقع
-map.on('click', function(e) {
-    selectedLocation = e.latlng;
-    alert("تم تحديد الموقع، الآن اكتبي اسم المدرسة");
-});
-
-// إضافة مدرسة
-document.getElementById("schoolName").addEventListener("change", function() {
-
-    if (!selectedLocation) {
-        alert("حددي الموقع أولاً");
-        return;
-    }
-
-    let name = this.value.trim();
-    if (!name) return;
-
-    fetch('/add_school', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            name: name,
-            lat: selectedLocation.lat,
-            lng: selectedLocation.lng
+        fetch('/add_school', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: schoolName,
+                lat: selectedLocation.lat,
+                lng: selectedLocation.lng
+            })
         })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message || data.error);
-        location.reload();
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message || data.error);
+            location.reload();
+        });
     });
-});
-
 </script>
 
 </body>
