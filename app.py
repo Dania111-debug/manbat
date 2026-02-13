@@ -1,108 +1,68 @@
 from flask import Flask, render_template, request, jsonify
-from collections import defaultdict
-
-def normalize_school(name):
-    words_to_remove = [
-        "مدرسة", "ثانوية", "متوسطة",
-        "ابتدائية", "مجمع", "بنات", "بنين"
-    ]
-
-    name = name.lower()
-
-    for w in words_to_remove:
-        name = name.replace(w, "")
-
-    name = name.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا")
-    name = name.replace("ة", "ه").replace("ى", "ي")
-
-    return " ".join(name.split()).strip()
-
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# 🔐 كلمة سر الأونر
-ADMIN_PASSWORD = "monbat-admin"  # غيريها
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///schools.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# تخزين مؤقت بالذاكرة
-schools = []
-school_counts = defaultdict(int)
-devices = set()
+db = SQLAlchemy(app)
 
+# جدول المدارس
+class School(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), unique=True, nullable=False)
+    lat = db.Column(db.Float, nullable=False)
+    lng = db.Column(db.Float, nullable=False)
 
-@app.route("/")
+# إنشاء قاعدة البيانات
+with app.app_context():
+    db.create_all()
+
+@app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template('index.html')
 
-
-@app.route("/register", methods=["POST"])
-def register():
-    data = request.json
-
-    device = data.get("device_id")
-    if device in devices:
-        return jsonify({"error": "تم التسجيل من هذا الجهاز مسبقًا"}), 400
-
-    devices.add(device)
-
-    raw_name = data["school"]
-    school = normalize_school(raw_name)
-
-    lat = data["lat"]
-    lng = data["lng"]
-
-    school_counts[school] += 1
-
-    schools.append({
-        "school": school,
-        "lat": lat,
-        "lng": lng,
-        "count": school_counts[school]
-    })
-
-    return jsonify({"success": True})
-
-
-@app.route("/schools")
+# جلب المدارس
+@app.route('/schools')
 def get_schools():
-    latest = {}
-    for s in schools:
-        latest[s["school"]] = s
-    return jsonify(list(latest.values()))
-
-
-@app.route("/schools/top")
-def top_schools():
-    top = sorted(
-        school_counts.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )[:5]
-
+    schools = School.query.all()
     return jsonify([
-        {"school": k, "count": v} for k, v in top
+        {
+            "id": s.id,
+            "name": s.name,
+            "lat": s.lat,
+            "lng": s.lng
+        } for s in schools
     ])
 
+# عداد المدارس
+@app.route('/schools/count')
+def schools_count():
+    return jsonify({"count": School.query.count()})
 
-@app.route("/count")
-def count():
-    return jsonify({"count": sum(school_counts.values())})
+# إضافة مدرسة
+@app.route('/add_school', methods=['POST'])
+def add_school():
+    data = request.get_json()
 
+    name = data.get('name')
+    lat = data.get('lat')
+    lng = data.get('lng')
 
-# 🔥 زر تصفير السيرفر (للأونر فقط)
-@app.route("/admin/reset", methods=["POST"])
-def admin_reset():
-    data = request.json
-    password = data.get("password")
+    if not name:
+        return jsonify({"error": "اسم المدرسة مطلوب"})
 
-    if password != ADMIN_PASSWORD:
-        return jsonify({"error": "غير مصرح"}), 403
+    # منع التكرار
+    existing = School.query.filter_by(name=name).first()
+    if existing:
+        return jsonify({"error": "هذه المدرسة مسجلة مسبقاً"})
 
-    schools.clear()
-    school_counts.clear()
-    devices.clear()
+    new_school = School(name=name, lat=lat, lng=lng)
+    db.session.add(new_school)
+    db.session.commit()
 
-    return jsonify({"success": True})
+    return jsonify({"message": "تمت إضافة المدرسة بنجاح"})
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
