@@ -35,6 +35,7 @@ body{
     background:#2F7D32;
     color:white;
     border:none;
+    cursor:pointer;
 }
 #map{
     height:400px;
@@ -75,7 +76,7 @@ body{
 <option value="المدينة المنورة">المدينة المنورة</option>
 </select>
 
-<button onclick="submit()">إضافة 🌿</button>
+<button onclick="submitSchool()">إضافة 🌿</button>
 
 </div>
 
@@ -91,7 +92,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAkDXP7hCcgdQ_PtInKHAsVvXzwOLW1J6I",
+  apiKey: "YOUR_API_KEY",
   authDomain: "manbat-b0919.firebaseapp.com",
   projectId: "manbat-b0919",
   storageBucket: "manbat-b0919.firebasestorage.app",
@@ -103,18 +104,27 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 var map = L.map('map').setView([24.7, 46.7], 6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+.addTo(map);
 
 let selectedLat = null;
 let selectedLng = null;
+let marker;
 
+// اختيار الموقع (ماركر واحد فقط)
 map.on('click', function(e){
     selectedLat = e.latlng.lat;
     selectedLng = e.latlng.lng;
-    L.marker([selectedLat, selectedLng]).addTo(map);
+
+    if(marker){
+        map.removeLayer(marker);
+    }
+
+    marker = L.marker([selectedLat, selectedLng]).addTo(map);
 });
 
-window.submit = async function(){
+// إضافة مدرسة
+window.submitSchool = async function(){
 
     const school = document.getElementById("schoolName").value.trim();
     const stage = document.getElementById("stage").value;
@@ -137,9 +147,32 @@ window.submit = async function(){
     });
 
     alert("تمت الإضافة 🌿");
+
+    // تنظيف الحقول
+    document.getElementById("schoolName").value = "";
+    document.getElementById("stage").value = "";
+    document.getElementById("gender").value = "";
+    document.getElementById("city").value = "";
+
+    if(marker){
+        map.removeLayer(marker);
+        marker = null;
+    }
+
+    selectedLat = null;
+    selectedLng = null;
+
+    loadSchools(); // تحديث الخريطة
 };
 
+// تحميل المدارس من فايربيز
 async function loadSchools(){
+
+    map.eachLayer(function(layer){
+        if(layer instanceof L.Marker){
+            map.removeLayer(layer);
+        }
+    });
 
     const querySnapshot = await getDocs(collection(db, "schools"));
 
@@ -148,7 +181,12 @@ async function loadSchools(){
 
         L.marker([s.lat, s.lng])
         .addTo(map)
-        .bindPopup(`${s.school} - ${s.stage} - ${s.gender} - ${s.city}`);
+        .bindPopup(`
+            <b>${s.school}</b><br>
+            المرحلة: ${s.stage}<br>
+            النوع: ${s.gender}<br>
+            المدينة: ${s.city}
+        `);
     });
 }
 
