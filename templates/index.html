@@ -1,10 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>منبت | خريطة المدارس</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+body{
+    font-family: Tahoma;
+    direction: rtl;
+    margin:0;
+    padding:15px;
+}
+.container{
+    max-width:900px;
+    margin:auto;
+}
+.card{
+    background:#f4f4f4;
+    padding:15px;
+    border-radius:15px;
+    margin-bottom:10px;
+}
+.card input,
+.card select,
+.card button{
+    width:100%;
+    height:40px;
+    margin-bottom:6px;
+    border-radius:10px;
+}
+.card button{
+    background:#2F7D32;
+    color:white;
+    border:none;
+}
+#map{
+    height:400px;
+    border-radius:15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>🌱 منبت</h2>
+
+<div class="card">
+
+<input id="schoolName" placeholder="اسم المدرسة">
+
+<select id="stage">
+<option value="">اختر المرحلة</option>
+<option value="ابتدائي">ابتدائي</option>
+<option value="متوسط">متوسط</option>
+<option value="ثانوي">ثانوي</option>
+</select>
+
+<select id="gender">
+<option value="">بنين / بنات</option>
+<option value="بنين">بنين</option>
+<option value="بنات">بنات</option>
+</select>
+
+<select id="city">
+<option value="">اختر المدينة</option>
+<option value="الرياض">الرياض</option>
+<option value="جدة">جدة</option>
+<option value="مكة">مكة</option>
+<option value="الدمام">الدمام</option>
+<option value="المدينة المنورة">المدينة المنورة</option>
+</select>
+
+<button onclick="submit()">إضافة 🌿</button>
+
+</div>
+
+<div id="map"></div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <script type="module">
 
-// Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAkDXP7hCcgdQ_PtInKHAsVvXzwOLW1J6I",
   authDomain: "manbat-b0919.firebaseapp.com",
@@ -14,65 +99,62 @@ const firebaseConfig = {
   appId: "1:286518930930:web:69cc91accf5ba121864f6b"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// عند الضغط على الخريطة
+var map = L.map('map').setView([24.7, 46.7], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
 let selectedLat = null;
 let selectedLng = null;
 
-map.on('click', function(e) {
-  selectedLat = e.latlng.lat;
-  selectedLng = e.latlng.lng;
-
-  L.marker([selectedLat, selectedLng]).addTo(map);
+map.on('click', function(e){
+    selectedLat = e.latlng.lat;
+    selectedLng = e.latlng.lng;
+    L.marker([selectedLat, selectedLng]).addTo(map);
 });
 
-// دالة الإرسال
-window.submit = async function () {
+window.submit = async function(){
 
-  const name = document.getElementById("name").value;
-  const students = document.getElementById("students").value;
+    const school = document.getElementById("schoolName").value.trim();
+    const stage = document.getElementById("stage").value;
+    const gender = document.getElementById("gender").value;
+    const city = document.getElementById("city").value;
 
-  if (!name || !students || selectedLat === null) {
-    alert("املئي كل البيانات واختاري موقع من الخريطة");
-    return;
-  }
+    if(!school || !stage || !gender || !city || selectedLat === null){
+        alert("عبّي كل البيانات وحددي الموقع");
+        return;
+    }
 
-  try {
     await addDoc(collection(db, "schools"), {
-      name: name,
-      students: students,
-      lat: selectedLat,
-      lng: selectedLng
+        school,
+        stage,
+        gender,
+        city,
+        lat: selectedLat,
+        lng: selectedLng,
+        time: new Date()
     });
 
-    alert("تم حفظ المدرسة بنجاح ✅");
-
-    document.getElementById("name").value = "";
-    document.getElementById("students").value = "";
-
-  } catch (error) {
-    console.error("Error adding document: ", error);
-    alert("حدث خطأ ❌");
-  }
+    alert("تمت الإضافة 🌿");
 };
 
-// تحميل الدبابيس عند فتح الصفحة
-async function loadSchools() {
+async function loadSchools(){
 
-  const querySnapshot = await getDocs(collection(db, "schools"));
+    const querySnapshot = await getDocs(collection(db, "schools"));
 
-  querySnapshot.forEach((doc) => {
-    const data = doc.data();
+    querySnapshot.forEach((doc) => {
+        const s = doc.data();
 
-    L.marker([data.lat, data.lng])
-      .addTo(map)
-      .bindPopup(`${data.name} - ${data.students} طالب`);
-  });
+        L.marker([s.lat, s.lng])
+        .addTo(map)
+        .bindPopup(`${s.school} - ${s.stage} - ${s.gender} - ${s.city}`);
+    });
 }
 
 loadSchools();
 
 </script>
+
+</body>
+</html>
