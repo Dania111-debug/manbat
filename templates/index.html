@@ -53,21 +53,23 @@ body {
 }
 
 .card input,
+.card select,
 .card button {
     width: 100%;
     height: 42px;
     border-radius: 12px;
+    margin-bottom: 6px;
 }
 
 .card input {
     padding: 0 12px;
-    margin-bottom: 6px;
 }
 
 .card button {
     background: var(--green);
     color: white;
     border: none;
+    cursor: pointer;
 }
 
 #map {
@@ -100,7 +102,30 @@ body {
 
 <div class="card">
 <h3>إضافة مشاركة</h3>
+
 <input id="schoolName" placeholder="اسم المدرسة">
+
+<select id="stage">
+<option value="">اختر المرحلة</option>
+<option value="ابتدائي">ابتدائي</option>
+<option value="متوسط">متوسط</option>
+<option value="ثانوي">ثانوي</option>
+</select>
+
+<select id="gender">
+<option value="">بنين / بنات</option>
+<option value="بنين">بنين</option>
+<option value="بنات">بنات</option>
+</select>
+
+<select id="city">
+<option value="">اختر المدينة</option>
+<option value="الرياض">الرياض</option>
+<option value="جدة">جدة</option>
+<option value="الدمام">الدمام</option>
+<option value="مكة">مكة</option>
+</select>
+
 <button onclick="submit()">إضافة 🌿</button>
 </div>
 
@@ -147,14 +172,16 @@ function loadSchools() {
     .then(r => r.json())
     .then(data => {
         data.forEach(s => {
-            if (markers[s.school]) {
-                markers[s.school]
-                    .setPopupContent(`${s.school}<br>👩‍🎓 ${s.count}`);
+            let key = s.school + "-" + s.stage + "-" + s.gender + "-" + s.city;
+
+            if (markers[key]) {
+                markers[key]
+                    .setPopupContent(`${s.school} - ${s.stage} - ${s.gender} - ${s.city}<br>👩‍🎓 ${s.count}`);
             } else {
                 let m = L.marker([s.lat, s.lng])
                     .addTo(map)
-                    .bindPopup(`${s.school}<br>👩‍🎓 ${s.count}`);
-                markers[s.school] = m;
+                    .bindPopup(`${s.school} - ${s.stage} - ${s.gender} - ${s.city}<br>👩‍🎓 ${s.count}`);
+                markers[key] = m;
             }
         });
     });
@@ -163,18 +190,19 @@ function loadSchools() {
 function loadCount(){
     fetch('/count')
     .then(r => r.json())
-    .then(d => counter.innerText = d.count);
+    .then(d => document.getElementById("counter").innerText = d.count);
 }
 
 function loadTop(){
     fetch('/schools/top')
     .then(r => r.json())
     .then(data => {
+        let topList = document.getElementById("topList");
         topList.innerHTML = "";
         data.forEach(s => {
             let div = document.createElement("div");
             div.className = "rank";
-            div.innerHTML = `<span>${s.school}</span><b>${s.count}</b>`;
+            div.innerHTML = `<span>${s.school} - ${s.stage} - ${s.gender} - ${s.city}</span><b>${s.count}</b>`;
             topList.appendChild(div);
         });
     });
@@ -191,10 +219,13 @@ setInterval(() => {
 }, 5000);
 
 function submit(){
-    let school = schoolName.value.trim();
+    let school = document.getElementById("schoolName").value.trim();
+    let stage = document.getElementById("stage").value;
+    let gender = document.getElementById("gender").value;
+    let city = document.getElementById("city").value;
 
-    if (!school || !selected) {
-        alert("حددي الموقع واكتبي اسم المدرسة");
+    if (!school || !selected || !stage || !gender || !city) {
+        alert("عبّي كل البيانات وحددي الموقع");
         return;
     }
 
@@ -203,6 +234,9 @@ function submit(){
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
             school,
+            stage,
+            gender,
+            city,
             lat: selected.lat,
             lng: selected.lng,
             device_id: deviceId
