@@ -3,11 +3,9 @@ from collections import defaultdict
 
 app = Flask(__name__)
 
-# توحيد أسماء المدارس تلقائياً
 def normalize_school(name):
     words_to_remove = [
-        "مدرسة", "ثانوية", "متوسطة",
-        "ابتدائية", "مجمع", "بنات", "بنين"
+        "مدرسة", "مجمع"
     ]
 
     name = name.lower()
@@ -88,3 +86,4 @@ def count():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
