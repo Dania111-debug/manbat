@@ -12,17 +12,31 @@ body{
     direction: rtl;
     margin:0;
     padding:15px;
+    transition: 0.3s;
 }
+
+body.dark{
+    background:#121212;
+    color:white;
+}
+
 .container{
     max-width:900px;
     margin:auto;
 }
+
 .card{
     background:#f4f4f4;
     padding:15px;
     border-radius:15px;
     margin-bottom:10px;
+    transition: 0.3s;
 }
+
+body.dark .card{
+    background:#1e1e1e;
+}
+
 .card input,
 .card select,
 .card button{
@@ -31,17 +45,20 @@ body{
     margin-bottom:6px;
     border-radius:10px;
 }
+
 .card button{
     background:#2F7D32;
     color:white;
     border:none;
     cursor:pointer;
 }
+
 #map{
     height:400px;
     border-radius:15px;
 }
 </style>
+
 </head>
 
 <body>
