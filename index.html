@@ -1,155 +1,125 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>منبت</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-
 <style>
-body{
-    font-family:Tahoma;
-    direction:rtl;
-    margin:0;
-    padding:15px;
-    transition:.3s;
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f4f4f4;
+    transition: 0.3s;
 }
 
-body.dark{
-    background:#121212;
-    color:white;
+header {
+    background: #2e7d32;
+    color: white;
+    padding: 15px;
+    text-align: center;
 }
 
-.container{
-    max-width:900px;
-    margin:auto;
+.school-name {
+    font-size: 18px;
+    margin-top: 5px;
 }
 
-.card{
-    background:#f4f4f4;
-    padding:15px;
-    border-radius:15px;
-    margin-bottom:10px;
-    transition:.3s;
+.container {
+    padding: 20px;
 }
 
-body.dark .card{
-    background:#1e1e1e;
+button {
+    padding: 10px 15px;
+    border: none;
+    background: #2e7d32;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    margin: 10px 0;
 }
 
-.card input,
-.card select,
-.card button{
-    width:100%;
-    height:40px;
-    margin-bottom:6px;
-    border-radius:10px;
-    border:none;
-    padding:5px;
+select {
+    padding: 8px;
+    margin: 10px 0;
+    width: 200px;
 }
 
-.card button{
-    background:#2F7D32;
-    color:white;
-    cursor:pointer;
+section {
+    margin-top: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
 }
 
-#map{
-    height:400px;
-    border-radius:15px;
+.dark {
+    background: #121212;
+    color: white;
 }
 
-#modeBtn{
-    float:left;
-    margin-bottom:10px;
-    padding:5px 10px;
+.dark section {
+    background: #1e1e1e;
+}
+
+.dark header {
+    background: #1b5e20;
 }
 </style>
 </head>
 
 <body>
 
+<header>
+    <h1>منبت 🌿</h1>
+    <div class="school-name">مدرستي الثانوية</div>
+</header>
+
 <div class="container">
 
-<button onclick="toggleMode()" id="modeBtn">🌙</button>
+<button id="darkModeToggle">تبديل الوضع 🌙</button>
 
-<h1>🌿 منبت</h1>
+<h3>اختر المنطقة والمدينة</h3>
 
-<div class="card">
-<select id="region" onchange="updateCities()">
-<option value="">اختر المنطقة</option>
-<option value="الرياض">الرياض</option>
-<option value="مكة">مكة المكرمة</option>
-<option value="الشرقية">المنطقة الشرقية</option>
-<option value="القصيم">القصيم</option>
-<option value="عسير">عسير</option>
-<option value="المدينة">المدينة المنورة</option>
+<select>
+    <optgroup label="منطقة الرياض">
+        <option>الرياض</option>
+        <option>الدرعية</option>
+        <option>الخرج</option>
+    </optgroup>
+
+    <optgroup label="منطقة مكة">
+        <option>مكة</option>
+        <option>جدة</option>
+        <option>الطائف</option>
+    </optgroup>
+
+    <optgroup label="المنطقة الشرقية">
+        <option>الدمام</option>
+        <option>الخبر</option>
+        <option>الأحساء</option>
+    </optgroup>
 </select>
 
-<select id="city">
-<option value="">اختر المدينة</option>
-</select>
+<section>
+    <h3>🌿 Top 5 نباتات</h3>
+    <ul>
+        <li>النعناع</li>
+        <li>الريحان</li>
+        <li>الصبار</li>
+        <li>اللافندر</li>
+        <li>الزعتر</li>
+    </ul>
+</section>
+
 </div>
-
-<div id="map"></div>
-
-</div>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
+const toggle = document.getElementById("darkModeToggle");
 
-const citiesData = {
-"الرياض": ["الرياض","الخرج","الدوادمي","المجمعة","شقراء","عفيف"],
-"مكة": ["مكة","جدة","الطائف","رابغ","القنفذة","الليث"],
-"الشرقية": ["الدمام","الخبر","الظهران","الأحساء","الجبيل","القطيف"],
-"القصيم": ["بريدة","عنيزة","الرس","البكيرية","المذنب"],
-"عسير": ["أبها","خميس مشيط","النماص","محايل عسير","رجال ألمع"],
-"المدينة": ["المدينة","ينبع","العلا","بدر","خيبر"]
-};
-
-function updateCities(){
-    const region = document.getElementById("region").value;
-    const citySelect = document.getElementById("city");
-
-    citySelect.innerHTML = "<option value=''>اختر المدينة</option>";
-
-    if(region && citiesData[region]){
-        citiesData[region].forEach(city=>{
-            let option = document.createElement("option");
-            option.value = city;
-            option.textContent = city;
-            citySelect.appendChild(option);
-        });
-    }
-}
-
-window.toggleMode = function(){
+toggle.onclick = function() {
     document.body.classList.toggle("dark");
-
-    const btn = document.getElementById("modeBtn");
-
-    if(document.body.classList.contains("dark")){
-        btn.innerHTML="☀️";
-        localStorage.setItem("mode","dark");
-    }else{
-        btn.innerHTML="🌙";
-        localStorage.setItem("mode","light");
-    }
-}
-
-if(localStorage.getItem("mode")==="dark"){
-    document.body.classList.add("dark");
-    document.getElementById("modeBtn").innerHTML="☀️";
-}
-
-// الخريطة
-const map = L.map('map').setView([24.7136,46.6753],6);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-maxZoom:19
-}).addTo(map);
-
+};
 </script>
 
 </body>
