@@ -2,17 +2,17 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>منبت | خريطة المدارس</title>
+<title>منبت</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
 body{
-    font-family: Tahoma;
-    direction: rtl;
+    font-family:Tahoma;
+    direction:rtl;
     margin:0;
     padding:15px;
-    transition:0.3s;
+    transition:.3s;
 }
 
 body.dark{
@@ -30,7 +30,7 @@ body.dark{
     padding:15px;
     border-radius:15px;
     margin-bottom:10px;
-    transition:0.3s;
+    transition:.3s;
 }
 
 body.dark .card{
@@ -44,12 +44,13 @@ body.dark .card{
     height:40px;
     margin-bottom:6px;
     border-radius:10px;
+    border:none;
+    padding:5px;
 }
 
 .card button{
     background:#2F7D32;
     color:white;
-    border:none;
     cursor:pointer;
 }
 
@@ -58,9 +59,10 @@ body.dark .card{
     border-radius:15px;
 }
 
-#top5{
-    font-size:14px;
+#modeBtn{
+    float:left;
     margin-bottom:10px;
+    padding:5px 10px;
 }
 </style>
 </head>
@@ -69,44 +71,24 @@ body.dark .card{
 
 <div class="container">
 
-<button onclick="toggleMode()" id="modeBtn" style="float:left;">🌙</button>
+<button onclick="toggleMode()" id="modeBtn">🌙</button>
 
-<h2>🌱 منبت</h2>
-
-<div id="top5"></div>
+<h1>🌿 منبت</h1>
 
 <div class="card">
-
-<input id="schoolName" placeholder="اسم المدرسة">
-
-<select id="stage">
-<option value="">اختر المرحلة</option>
-<option value="ابتدائي">ابتدائي</option>
-<option value="متوسط">متوسط</option>
-<option value="ثانوي">ثانوي</option>
-</select>
-
-<select id="gender">
-<option value="">بنين / بنات</option>
-<option value="بنين">بنين</option>
-<option value="بنات">بنات</option>
-</select>
-
 <select id="region" onchange="updateCities()">
 <option value="">اختر المنطقة</option>
-<option value="الوسطى">الوسطى</option>
-<option value="الغربية">الغربية</option>
-<option value="الشرقية">الشرقية</option>
-<option value="الجنوبية">الجنوبية</option>
-<option value="الشمالية">الشمالية</option>
+<option value="الرياض">الرياض</option>
+<option value="مكة">مكة المكرمة</option>
+<option value="الشرقية">المنطقة الشرقية</option>
+<option value="القصيم">القصيم</option>
+<option value="عسير">عسير</option>
+<option value="المدينة">المدينة المنورة</option>
 </select>
 
 <select id="city">
 <option value="">اختر المدينة</option>
 </select>
-
-<button onclick="submitSchool()">إضافة 🌿</button>
-
 </div>
 
 <div id="map"></div>
@@ -115,143 +97,60 @@ body.dark .card{
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<script type="module">
+<script>
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAkDXP7hCcgdQ_PtInKHAsVvXzwOLW1J6I",
-  authDomain: "manbat-b0919.firebaseapp.com",
-  projectId: "manbat-b0919",
-  storageBucket: "manbat-b0919.firebasestorage.app",
-  messagingSenderId: "286518930930",
-  appId: "1:286518930930:web:69cc91accf5ba121864f6b"
+const citiesData = {
+"الرياض": ["الرياض","الخرج","الدوادمي","المجمعة","شقراء","عفيف"],
+"مكة": ["مكة","جدة","الطائف","رابغ","القنفذة","الليث"],
+"الشرقية": ["الدمام","الخبر","الظهران","الأحساء","الجبيل","القطيف"],
+"القصيم": ["بريدة","عنيزة","الرس","البكيرية","المذنب"],
+"عسير": ["أبها","خميس مشيط","النماص","محايل عسير","رجال ألمع"],
+"المدينة": ["المدينة","ينبع","العلا","بدر","خيبر"]
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+function updateCities(){
+    const region = document.getElementById("region").value;
+    const citySelect = document.getElementById("city");
 
-var map = L.map('map').setView([24.7, 46.7], 6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-.addTo(map);
+    citySelect.innerHTML = "<option value=''>اختر المدينة</option>";
 
-let selectedLat = null;
-let selectedLng = null;
-let marker;
-
-// 🌙 دارك مود مع حفظ الاختيار
-if(localStorage.getItem("mode") === "dark"){
-    document.body.classList.add("dark");
-    document.getElementById("modeBtn").innerHTML="☀️";
+    if(region && citiesData[region]){
+        citiesData[region].forEach(city=>{
+            let option = document.createElement("option");
+            option.value = city;
+            option.textContent = city;
+            citySelect.appendChild(option);
+        });
+    }
 }
 
 window.toggleMode = function(){
     document.body.classList.toggle("dark");
 
+    const btn = document.getElementById("modeBtn");
+
     if(document.body.classList.contains("dark")){
+        btn.innerHTML="☀️";
         localStorage.setItem("mode","dark");
-        document.getElementById("modeBtn").innerHTML="☀️";
     }else{
+        btn.innerHTML="🌙";
         localStorage.setItem("mode","light");
-        document.getElementById("modeBtn").innerHTML="🌙";
     }
 }
 
-// 📍 اختيار موقع
-map.on('click', function(e){
-    selectedLat = e.latlng.lat;
-    selectedLng = e.latlng.lng;
-
-    if(marker){
-        map.removeLayer(marker);
-    }
-
-    marker = L.marker([selectedLat, selectedLng]).addTo(map);
-});
-
-// 🏙 المدن المتفرعة
-const citiesData = {
-    "الوسطى":["الرياض","الخرج","القصيم"],
-    "الغربية":["جدة","مكة","المدينة"],
-    "الشرقية":["الدمام","الخبر","الأحساء"],
-    "الجنوبية":["أبها","نجران","جازان"],
-    "الشمالية":["تبوك","عرعر","حائل"]
-};
-
-window.updateCities = function(){
-    const region = document.getElementById("region").value;
-    const citySelect = document.getElementById("city");
-    citySelect.innerHTML = '<option value="">اختر المدينة</option>';
-
-    if(citiesData[region]){
-        citiesData[region].forEach(c=>{
-            citySelect.innerHTML += `<option value="${c}">${c}</option>`;
-        });
-    }
+if(localStorage.getItem("mode")==="dark"){
+    document.body.classList.add("dark");
+    document.getElementById("modeBtn").innerHTML="☀️";
 }
 
-// ➕ إضافة مدرسة
-window.submitSchool = async function(){
+// الخريطة
+const map = L.map('map').setView([24.7136,46.6753],6);
 
-    const school = document.getElementById("schoolName").value.trim();
-    const stage = document.getElementById("stage").value;
-    const gender = document.getElementById("gender").value;
-    const city = document.getElementById("city").value;
-
-    if(!school || !stage || !gender || !city || selectedLat === null){
-        alert("عبّي كل البيانات وحددي الموقع");
-        return;
-    }
-
-    await addDoc(collection(db, "schools"), {
-        school,stage,gender,city,
-        lat:selectedLat,lng:selectedLng,
-        time:new Date()
-    });
-
-    alert("تمت الإضافة 🌿");
-
-    loadSchools();
-}
-
-// 📊 تحميل + Top 5
-async function loadSchools(){
-
-    map.eachLayer(function(layer){
-        if(layer instanceof L.Marker){
-            map.removeLayer(layer);
-        }
-    });
-
-    const snapshot = await getDocs(collection(db, "schools"));
-    let cityCount = {};
-
-    snapshot.forEach(doc=>{
-        const s = doc.data();
-
-        L.marker([s.lat, s.lng])
-        .addTo(map)
-        .bindPopup(`<b>${s.school}</b><br>${s.city}`);
-
-        cityCount[s.city] = (cityCount[s.city] || 0) + 1;
-    });
-
-    // ترتيب Top 5
-    let sorted = Object.entries(cityCount)
-        .sort((a,b)=>b[1]-a[1])
-        .slice(0,5);
-
-    let html = "<b>Top 5 المدن:</b><br>";
-    sorted.forEach(c=>{
-        html += `${c[0]} (${c[1]})<br>`;
-    });
-
-    document.getElementById("top5").innerHTML = html;
-}
-
-loadSchools();
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+maxZoom:19
+}).addTo(map);
 
 </script>
+
 </body>
 </html>
