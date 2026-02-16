@@ -2,7 +2,8 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>منبت | خريطة المدارس</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>خريطة منبت </title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
@@ -54,10 +55,18 @@ body.dark .card{
 }
 
 #map{
-    height:50vh;
-    max-height:400px;
-
+    height:45vh;
+    max-height:350px;
+    border-radius:15px;
 }
+
+@media (max-width:600px){
+    #map{
+        height:30vh;
+        max-height:220px;
+    }
+}
+
 
 #top5{
     font-size:14px;
